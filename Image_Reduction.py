@@ -3,6 +3,8 @@ import os
 from os import system
 import numpy as np
 import matplotlib.pyplot as plt
+from astropy.time import Time
+#import datetime
 #print "TESTING"
 
 def Max_Min_Ave(fname,path):
@@ -19,21 +21,21 @@ def Max_Min_Ave(fname,path):
     print "The Average pixel vale is " + str(Ave)+" ADU"
     return Min,Max,Ave
 
-def display(fname,path):
+def display(fname,path,Size):
     """
     fname: str- the name of the FITS file you want displayed
     returns: a linear greyscale image of the FITS file
     """
     imagefile=fits.open(path+fname)
     imagedata=imagefile[0].data
-    x= np.arange(0,2048)
-    y= np.arange(0,2048)
+    x= np.arange(0,Size)
+    y= np.arange(0,Size)
     plt.pcolor(x,y,imagedata,cmap='Greys_r')
     plt.show()
 
-def Average_Image(fname_list,path):
+def Average_Image(fname_list,path,Size):
     N=len(fname_list)
-    Master=np.empty([N,2048,2048])
+    Master=np.empty([N,Size,Size])
     for i in range(0,N):
         fname=fname_list[i]
         imagefile=fits.open(path+fname)
@@ -66,7 +68,7 @@ def Divide(fname1,fname2,path):
     Ratio=imagedata1/imagedata2
     return Ratio
 
-def Image_Reduction(path,fname_key,Filter,Expo_Time=60,Bin=1,CCD_Temp_Diff_Thresh=5):
+def Image_Reduction(path,fname_key,Filter,Size=False,Date_Observation=False,CCD_Temp_Diff_Thresh=5):
     #print "Hello_World"
     Obs_File_LS=os.popen("ls "+path).read()
     #print "Obs_File_LS : ", Obs_File_LS
@@ -77,7 +79,7 @@ def Image_Reduction(path,fname_key,Filter,Expo_Time=60,Bin=1,CCD_Temp_Diff_Thres
     Flat_Fname_L=[]
     Light_Fname_L=[]
     for Obs_Filename_Test in Obs_File_LS_L:
-        if((Obs_Filename_Test=='') or ("Avg_Bias" in Obs_Filename_Test) or("Flat_Minus_Avg_Bias" in Obs_Filename_Test) or ("Minus_Dark" in Obs_Filename_Test) or ("Reduced" in Obs_Filename_Test)):
+        if((Obs_Filename_Test=='') or ("Avg_Bias" in Obs_Filename_Test) or ("Flat_Minus_Avg_Bias" in Obs_Filename_Test) or ("Minus_Dark" in Obs_Filename_Test) or ("Reduced" in Obs_Filename_Test)):
             continue
         print "Obs_Filename_Test : ", Obs_Filename_Test
         #print "Obs_Filename_Test : ", Obs_Filename_Test
@@ -91,26 +93,49 @@ def Image_Reduction(path,fname_key,Filter,Expo_Time=60,Bin=1,CCD_Temp_Diff_Thres
         hdul = fits.open(path + Obs_Filename_Test)
         #print hdul
         #hdul.info()
-        Date_Obs=hdul[0].header['DATE-OBS']
+        Date_and_Time_Obs=hdul[0].header['DATE-OBS']
+        print "Date_and_Time_Obs : ", Date_and_Time_Obs
+        #Date_Obs=Date_and_Time_Obs.split("T")[0]
         #print "Date_Obs : ", Date_Obs
+        #Day_Obs_Str=Date_Obs.split("-")[2]
+        #Time_Obs=Date_Obs=Date_and_Time_Obs.split("T")[1]
+        #print "Time_Obs : ", Time_Obs
+        #Time_Obs_Hour_String=Time_Obs.split(":")[0]
+        #print "Time_Obs_Hour_String : ", Time_Obs_Hour_String
+        #Time_Obs_Hour=int(Time_Obs_Hour_String)
+        #print "Time_Obs_Hour : ", Time_Obs_Hour
+
+        #if(Date_Observation!=False):
+        #if(isinstance(Date_Observation,basestring)):
+            #Same_Night_Bool=(((Date_Obs==Date_Observation) and ((Time_Obs_Hour>17) or ()
+        #Note: Need to create a boolean variable that is true if the observations ouccur on the same night
         Exposure_Time=hdul[0].header['EXPTIME']
         #print "Exposure_Time : ", Exposure_Time
         Set_Temp=hdul[0].header['SET-TEMP']
         #print "Set_Temp : ", Set_Temp
         CCD_Temp=hdul[0].header['CCD-TEMP']
         #print "CCD_Temp : ", CCD_Temp
-        X_Binning=hdul[0].header['XBINNING']
+        #X_Binning=hdul[0].header['XBINNING']
         #print "X_Binning : ", X_Binning
-        Y_Binning=hdul[0].header['YBINNING']
+        #Y_Binning=hdul[0].header['YBINNING']
         #print "Y_Binning : ", Y_Binning
         Image_Type=hdul[0].header['IMAGETYP']
         print "Image_Type : ", Image_Type
+        X_Axis_Size=hdul[0].header['NAXIS1'] #Not sure of NAXIS1 is the X-axis
+        print "X_Axis_Size : ",  X_Axis_Size
+        Y_Axis_Size=hdul[0].header['NAXIS2'] #Not sure of NAXIS2 is the Y-axis
+        print "Y_Axis_Size : ",  Y_Axis_Size
         CCD_Temp_Diff=CCD_Temp-Set_Temp
         #print "CCD_Temp_Diff : ", CCD_Temp_Diff
         if((Image_Type=="Light Frame") or (Image_Type=="Flat Field")):
             Obs_Filter=hdul[0].header['FILTER']
             print "Obs_Filter : ", Obs_Filter
-        if((fname_key in Obs_Filename_Test or ("R" in Obs_Filename_Test)) and (int(X_Binning)==Bin) and (int(X_Binning)==Bin) and (CCD_Temp_Diff<CCD_Temp_Diff_Thresh)): #Conditions applicatble to all Image Types
+        if(Size==False and (X_Axis_Size==Y_Axis_Size)):
+            Size=X_Axis_Size
+        if(X_Axis_Size!=Y_Axis_Size):
+            return "Not a square CCD ! ! !"
+        #if((fname_key in Obs_Filename_Test or ("R" in Obs_Filename_Test)) and (int(X_Binning)==Bin) and (int(X_Binning)==Bin) and (CCD_Temp_Diff<CCD_Temp_Diff_Thresh)): #Conditions applicatble to all Image Types
+        if((fname_key in Obs_Filename_Test or ("R" in Obs_Filename_Test)) and (CCD_Temp_Diff<CCD_Temp_Diff_Thresh) and (Size==X_Axis_Size)): #Conditions applicatble to all Image Types
             if(Image_Type=="Bias Frame"): #Conditions for accepting a Bias
                 #print "BIAS TEST"
                 Bias_Fname_L.append(Obs_Filename_Test) #Conditions for accepting a Dark
@@ -121,7 +146,7 @@ def Image_Reduction(path,fname_key,Filter,Expo_Time=60,Bin=1,CCD_Temp_Diff_Thres
             if((Image_Type=="Light Frame") and (Obs_Filter==Filter)):
                 Light_Fname_L.append(Obs_Filename_Test)
     print "Bias_Fname_L : ", Bias_Fname_L
-    Bias_Avg=Average_Image(Bias_Fname_L,path)
+    Bias_Avg=Average_Image(Bias_Fname_L,path,Size)
     Bias_Avg_fname=fname_key+"_Avg_Bias.fit"
     #print "Bias_Avg_fname : ", Bias_Avg_fname
     if(Bias_Avg_fname not in Obs_File_LS_L):
@@ -137,7 +162,7 @@ def Image_Reduction(path,fname_key,Filter,Expo_Time=60,Bin=1,CCD_Temp_Diff_Thres
         Flat_Minus_Avg_Bias_Fname_L.append(Flat_Minus_Avg_Bias_Fname)
         if(Flat_Minus_Avg_Bias_Fname not in Obs_File_LS_L):
             Write(Flat_Minus_Avg_Bias,Flat_Minus_Avg_Bias_Fname,path)
-    Flat_Minus_Avg_Bias_Avg=Average_Image(Flat_Minus_Avg_Bias_Fname_L,path)
+    Flat_Minus_Avg_Bias_Avg=Average_Image(Flat_Minus_Avg_Bias_Fname_L,path,Size)
     Flat_Minus_Avg_Bias_Fname_L_Fits=Flat_Minus_Avg_Bias_Fname.split(".")
     #print "Flat_Minus_Avg_Bias_Fname_L_Fits : ", Flat_Minus_Avg_Bias_Fname_L_Fits
     Flat_Minus_Avg_Bias_Avg_Fname=Flat_Minus_Avg_Bias_Fname_L_Fits[0]+"_Avg.fit"
@@ -198,7 +223,7 @@ def Image_Reduction(path,fname_key,Filter,Expo_Time=60,Bin=1,CCD_Temp_Diff_Thres
         print "Reduced_Light_Fname : ", Reduced_Light_Fname
         if(Reduced_Light_Fname not in Obs_File_LS_L):
             Write(Reduced_Light_Data,Reduced_Light_Fname,path)
-        #display(Reduced_Light_Fname,path)
+        #display(Reduced_Light_Fname,path,X_Axis_Size,Y_Axis_Size)
 
 
 
@@ -210,4 +235,6 @@ def Image_Reduction(path,fname_key,Filter,Expo_Time=60,Bin=1,CCD_Temp_Diff_Thres
 
 #Image_Reduction("/Network/Servers/vimes.astro.wesleyan.edu/Volumes/vvodata/home/asantini/Desktop/24_Inch_Observations/Fireworks_Galaxy/Fireworks_Galaxy_71818/71818/","Image","V")
 #72018_Modifed
-Image_Reduction("/Network/Servers/vimes.astro.wesleyan.edu/Volumes/vvodata/home/asantini/Desktop/24_Inch_Observations/Fireworks_Galaxy/Fireworks_Galaxy_72018/72018_Modifed_Image_Reduction_Code_Test/","Fireworks","V")
+#Image_Reduction("/Network/Servers/vimes.astro.wesleyan.edu/Volumes/vvodata/home/asantini/Desktop/24_Inch_Observations/Fireworks_Galaxy/Fireworks_Galaxy_72018/72018_Modifed_Image_Reduction_Code_Test/","Fireworks","V")
+#72018_Modifed_Image_Reduction_Code_V2_Test
+Image_Reduction("/Network/Servers/vimes.astro.wesleyan.edu/Volumes/vvodata/home/asantini/Desktop/24_Inch_Observations/Fireworks_Galaxy/Fireworks_Galaxy_72018/72018_Modifed_Image_Reduction_Code_V2_Test/","Fireworks","V")
