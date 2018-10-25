@@ -21,21 +21,22 @@ def Max_Min_Ave(fname,path):
     print "The Average pixel vale is " + str(Ave)+" ADU"
     return Min,Max,Ave
 
-def display(fname,path,Size):
+def display(fname,path,X_Size,Y_Size):
     """
     fname: str- the name of the FITS file you want displayed
     returns: a linear greyscale image of the FITS file
     """
     imagefile=fits.open(path+fname)
     imagedata=imagefile[0].data
-    x= np.arange(0,Size)
-    y= np.arange(0,Size)
+    x= np.arange(0,X_Size)
+    y= np.arange(0,Y_Size)
     plt.pcolor(x,y,imagedata,cmap='Greys_r')
     plt.show()
 
-def Average_Image(fname_list,path,Size):
+def Average_Image(fname_list,path,X_Size,Y_Size):
     N=len(fname_list)
-    Master=np.empty([N,Size,Size])
+    #Master=np.empty([N,X_Size,Y_Size])
+    Master=np.empty([N,Y_Size,X_Size])
     for i in range(0,N):
         fname=fname_list[i]
         imagefile=fits.open(path+fname)
@@ -109,44 +110,104 @@ def Image_Reduction(path,fname_key,Filter,Size=False,Date_Observation=False,CCD_
         #if(isinstance(Date_Observation,basestring)):
             #Same_Night_Bool=(((Date_Obs==Date_Observation) and ((Time_Obs_Hour>17) or ()
         #Note: Need to create a boolean variable that is true if the observations ouccur on the same night
-        Exposure_Time=hdul[0].header['EXPTIME']
-        #print "Exposure_Time : ", Exposure_Time
-        Set_Temp=hdul[0].header['SET-TEMP']
-        #print "Set_Temp : ", Set_Temp
-        CCD_Temp=hdul[0].header['CCD-TEMP']
-        #print "CCD_Temp : ", CCD_Temp
-        #X_Binning=hdul[0].header['XBINNING']
-        #print "X_Binning : ", X_Binning
-        #Y_Binning=hdul[0].header['YBINNING']
-        #print "Y_Binning : ", Y_Binning
-        Image_Type=hdul[0].header['IMAGETYP']
-        print "Image_Type : ", Image_Type
-        X_Axis_Size=hdul[0].header['NAXIS1'] #Not sure of NAXIS1 is the X-axis
-        print "X_Axis_Size : ",  X_Axis_Size
-        Y_Axis_Size=hdul[0].header['NAXIS2'] #Not sure of NAXIS2 is the Y-axis
-        print "Y_Axis_Size : ",  Y_Axis_Size
-        CCD_Temp_Diff=CCD_Temp-Set_Temp
-        #print "CCD_Temp_Diff : ", CCD_Temp_Diff
-        if((Image_Type=="Light Frame") or (Image_Type=="Flat Field")):
-            Obs_Filter=hdul[0].header['FILTER']
-            print "Obs_Filter : ", Obs_Filter
-        if(Size==False and (X_Axis_Size==Y_Axis_Size)):
-            Size=X_Axis_Size
-        if(X_Axis_Size!=Y_Axis_Size):
-            return "Not a square CCD ! ! !"
-        #if((fname_key in Obs_Filename_Test or ("R" in Obs_Filename_Test)) and (int(X_Binning)==Bin) and (int(X_Binning)==Bin) and (CCD_Temp_Diff<CCD_Temp_Diff_Thresh)): #Conditions applicatble to all Image Types
-        if((fname_key in Obs_Filename_Test or ("R" in Obs_Filename_Test)) and (CCD_Temp_Diff<CCD_Temp_Diff_Thresh) and (Size==X_Axis_Size)): #Conditions applicatble to all Image Types
-            if(Image_Type=="Bias Frame"): #Conditions for accepting a Bias
-                #print "BIAS TEST"
-                Bias_Fname_L.append(Obs_Filename_Test) #Conditions for accepting a Dark
-            if(Image_Type=="Dark Frame"):
-                Dark_Fname_L.append(Obs_Filename_Test)
-            if(Image_Type=="Flat Field"):
-                Flat_Fname_L.append(Obs_Filename_Test)
-            if((Image_Type=="Light Frame") and (Obs_Filter==Filter)):
-                Light_Fname_L.append(Obs_Filename_Test)
+        Camera_Type=hdul[0].header['INSTRUME']
+        print "Camera_Type : ", Camera_Type
+        if(Camera_Type=="Apogee USB/Net"):
+            Exposure_Time=hdul[0].header['EXPTIME']
+            #print "Exposure_Time : ", Exposure_Time
+            Set_Temp=hdul[0].header['SET-TEMP']
+            #print "Set_Temp : ", Set_Temp
+            CCD_Temp=hdul[0].header['CCD-TEMP']
+            #print "CCD_Temp : ", CCD_Temp
+            #X_Binning=hdul[0].header['XBINNING']
+            #print "X_Binning : ", X_Binning
+            #Y_Binning=hdul[0].header['YBINNING']
+            #print "Y_Binning : ", Y_Binning
+            Image_Type=hdul[0].header['IMAGETYP']
+            print "Image_Type : ", Image_Type
+            X_Axis_Size=hdul[0].header['NAXIS1'] #Not sure of NAXIS1 is the X-axis
+            print "X_Axis_Size : ",  X_Axis_Size
+            Y_Axis_Size=hdul[0].header['NAXIS2'] #Not sure of NAXIS2 is the Y-axis
+            print "Y_Axis_Size : ",  Y_Axis_Size
+            CCD_Temp_Diff=CCD_Temp-Set_Temp
+            #print "CCD_Temp_Diff : ", CCD_Temp_Diff
+            if((Image_Type=="Light Frame") or (Image_Type=="Flat Field")):
+                Obs_Filter=hdul[0].header['FILTER']
+                print "Obs_Filter : ", Obs_Filter
+            """
+            if(Size==False and (X_Axis_Size==Y_Axis_Size)):
+                Size=X_Axis_Size
+            if(X_Axis_Size!=Y_Axis_Size):
+                print "Not a square CCD ! ! !"
+                return False
+                #return "Not a square CCD ! ! !"
+            """
+            X_Size=X_Axis_Size
+            Y_Size=Y_Axis_Size
+            #if((fname_key in Obs_Filename_Test or ("R" in Obs_Filename_Test)) and (int(X_Binning)==Bin) and (int(X_Binning)==Bin) and (CCD_Temp_Diff<CCD_Temp_Diff_Thresh)): #Conditions applicatble to all Image Types
+            #if((fname_key in Obs_Filename_Test or ("R" in Obs_Filename_Test)) and (CCD_Temp_Diff<CCD_Temp_Diff_Thresh) and (Size==X_Axis_Size)): #Conditions applicatble to all Image Types
+            #if((fname_key in Obs_Filename_Test) and (CCD_Temp_Diff<CCD_Temp_Diff_Thresh) and (Size==X_Axis_Size)): #Conditions applicatble to all Image Types
+            if((fname_key in Obs_Filename_Test) and (CCD_Temp_Diff<CCD_Temp_Diff_Thresh)): #Conditions applicatble to all Image Types
+                if(Image_Type=="Bias Frame"): #Conditions for accepting a Bias
+                    #print "BIAS TEST"
+                    Bias_Fname_L.append(Obs_Filename_Test) #Conditions for accepting a Dark
+                if(Image_Type=="Dark Frame"):
+                    Dark_Fname_L.append(Obs_Filename_Test)
+                if(Image_Type=="Flat Field"):
+                    Flat_Fname_L.append(Obs_Filename_Test)
+                if((Image_Type=="Light Frame") and (Obs_Filter==Filter)):
+                    Light_Fname_L.append(Obs_Filename_Test)
+        if(Camera_Type=="SBIG CCD"):
+            Exposure_Time=hdul[0].header['EXPTIME']
+            #print "Exposure_Time : ", Exposure_Time
+            #Set_Temp=hdul[0].header['SET-TEMP'] #Does not work for 16" camera (SBIG CCD)
+            #print "Set_Temp : ", Set_Temp
+            CCD_Temp=hdul[0].header['CCD-TEMP']
+            #print "CCD_Temp : ", CCD_Temp
+            #X_Binning=hdul[0].header['XBINNING']
+            #print "X_Binning : ", X_Binning
+            #Y_Binning=hdul[0].header['YBINNING']
+            #print "Y_Binning : ", Y_Binning
+            #Image_Type=hdul[0].header['IMAGETYP'] #Does not work for 16" camera (SBIG CCD)
+            Image_Type=hdul[0].header['FRAME']
+            print "Image_Type : ", Image_Type
+            #X_Axis_Size=hdul[0].header['NAXIS1'] #Not sure of NAXIS1 is the X-axis #Does not work for 16" camera (SBIG CCD)
+            X_Axis_Size=3072
+            print "X_Axis_Size : ",  X_Axis_Size
+            #Y_Axis_Size=hdul[0].header['NAXIS2'] #Not sure of NAXIS2 is the Y-axis #Does not work for 16" camera (SBIG CCD)
+            Y_Axis_Size=2048
+            print "Y_Axis_Size : ",  Y_Axis_Size
+            #CCD_Temp_Diff=CCD_Temp-Set_Temp #Does not work for 16" camera (SBIG CCD)
+            #print "CCD_Temp_Diff : ", CCD_Temp_Diff
+            #if((Image_Type=="Light Frame") or (Image_Type=="Flat Field")):
+            if((Image_Type=="Light") or (Image_Type=="Flat")):
+                Obs_Filter=hdul[0].header['FILTER']
+                print "Obs_Filter : ", Obs_Filter
+            """
+            if(Size==False and (X_Axis_Size==Y_Axis_Size)):
+                Size=X_Axis_Size
+            if(X_Axis_Size!=Y_Axis_Size):
+                print "Not a square CCD ! ! !"
+                return False
+            """
+            X_Size=X_Axis_Size
+            Y_Size=Y_Axis_Size
+            #if((fname_key in Obs_Filename_Test or ("R" in Obs_Filename_Test)) and (int(X_Binning)==Bin) and (int(X_Binning)==Bin) and (CCD_Temp_Diff<CCD_Temp_Diff_Thresh)): #Conditions applicatble to all Image Types
+            #if((fname_key in Obs_Filename_Test or ("R" in Obs_Filename_Test)) and (CCD_Temp_Diff<CCD_Temp_Diff_Thresh) and (Size==X_Axis_Size)): #Conditions applicatble to all Image Types
+            #if((fname_key in Obs_Filename_Test) and (CCD_Temp_Diff<CCD_Temp_Diff_Thresh) and (Size==X_Axis_Size)): #Conditions applicatble to all Image Types
+            #if((fname_key in Obs_Filename_Test) and (Size==X_Axis_Size)): #Conditions applicatble to all Image Types
+            if((fname_key in Obs_Filename_Test)): #Conditions applicatble to all Image Types
+                if(Image_Type=="Bias"): #Conditions for accepting a Bias
+                    #print "BIAS TEST"
+                    Bias_Fname_L.append(Obs_Filename_Test) #Conditions for accepting a Dark
+                if(Image_Type=="Dark"):
+                    Dark_Fname_L.append(Obs_Filename_Test)
+                if(Image_Type=="Flat"):
+                    Flat_Fname_L.append(Obs_Filename_Test)
+                if((Image_Type=="Light") and (Obs_Filter==Filter)):
+                    Light_Fname_L.append(Obs_Filename_Test)
     print "Bias_Fname_L : ", Bias_Fname_L
-    Bias_Avg=Average_Image(Bias_Fname_L,path,Size)
+    Bias_Avg=Average_Image(Bias_Fname_L,path,X_Size,Y_Size)
     Bias_Avg_fname=fname_key+"_Avg_Bias.fit"
     #print "Bias_Avg_fname : ", Bias_Avg_fname
     if(Bias_Avg_fname not in Obs_File_LS_L):
@@ -162,7 +223,7 @@ def Image_Reduction(path,fname_key,Filter,Size=False,Date_Observation=False,CCD_
         Flat_Minus_Avg_Bias_Fname_L.append(Flat_Minus_Avg_Bias_Fname)
         if(Flat_Minus_Avg_Bias_Fname not in Obs_File_LS_L):
             Write(Flat_Minus_Avg_Bias,Flat_Minus_Avg_Bias_Fname,path)
-    Flat_Minus_Avg_Bias_Avg=Average_Image(Flat_Minus_Avg_Bias_Fname_L,path,Size)
+    Flat_Minus_Avg_Bias_Avg=Average_Image(Flat_Minus_Avg_Bias_Fname_L,path,X_Size,Y_Size)
     Flat_Minus_Avg_Bias_Fname_L_Fits=Flat_Minus_Avg_Bias_Fname.split(".")
     #print "Flat_Minus_Avg_Bias_Fname_L_Fits : ", Flat_Minus_Avg_Bias_Fname_L_Fits
     Flat_Minus_Avg_Bias_Avg_Fname=Flat_Minus_Avg_Bias_Fname_L_Fits[0]+"_Avg.fit"
@@ -237,4 +298,7 @@ def Image_Reduction(path,fname_key,Filter,Size=False,Date_Observation=False,CCD_
 #72018_Modifed
 #Image_Reduction("/Network/Servers/vimes.astro.wesleyan.edu/Volumes/vvodata/home/asantini/Desktop/24_Inch_Observations/Fireworks_Galaxy/Fireworks_Galaxy_72018/72018_Modifed_Image_Reduction_Code_Test/","Fireworks","V")
 #72018_Modifed_Image_Reduction_Code_V2_Test
-Image_Reduction("/Network/Servers/vimes.astro.wesleyan.edu/Volumes/vvodata/home/asantini/Desktop/24_Inch_Observations/Fireworks_Galaxy/Fireworks_Galaxy_72018/72018_Modifed_Image_Reduction_Code_V2_Test/","Fireworks","V")
+#Image_Reduction("/Network/Servers/vimes.astro.wesleyan.edu/Volumes/vvodata/home/asantini/Desktop/24_Inch_Observations/Fireworks_Galaxy/Fireworks_Galaxy_72018/72018_Modifed_Image_Reduction_Code_V2_Test/","Fireworks","V")
+#Image_Reduction("/Network/Servers/vimes.astro.wesleyan.edu/Volumes/vvodata/home/asantini/Desktop/24_Inch_Observations/Fireworks_Galaxy/Fireworks_Galaxy_101818/Finding_Fireworks_GDrive/Fireworks_V_101818_Reduced_2/All_Reduced_Test/","Fireworks","V")
+#Image_Reduction("/Network/Servers/vimes.astro.wesleyan.edu/Volumes/vvodata/home/asantini/Desktop/24_Inch_Observations/Fireworks_Galaxy/Fireworks_Galaxy_72018/72018_Modifed_Image_Reduction_Code_V3_Test/","Fireworks","V")
+#Image_Reduction("/Network/Servers/vimes.astro.wesleyan.edu/Volumes/vvodata/home/asantini/Desktop/24_Inch_Observations/Fireworks_Galaxy/Fireworks_Galaxy_101818/Finding_Fireworks_GDrive/Fireworks_V_101818_Reduced_2/All_Reduced_Test/","Fireworks","V")
