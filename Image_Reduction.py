@@ -147,16 +147,23 @@ def Image_Reduction(path,fname_key,Filter,Size=False,Date_Observation=False,CCD_
             #if((fname_key in Obs_Filename_Test or ("R" in Obs_Filename_Test)) and (int(X_Binning)==Bin) and (int(X_Binning)==Bin) and (CCD_Temp_Diff<CCD_Temp_Diff_Thresh)): #Conditions applicatble to all Image Types
             #if((fname_key in Obs_Filename_Test or ("R" in Obs_Filename_Test)) and (CCD_Temp_Diff<CCD_Temp_Diff_Thresh) and (Size==X_Axis_Size)): #Conditions applicatble to all Image Types
             #if((fname_key in Obs_Filename_Test) and (CCD_Temp_Diff<CCD_Temp_Diff_Thresh) and (Size==X_Axis_Size)): #Conditions applicatble to all Image Types
-            if((fname_key in Obs_Filename_Test) and (CCD_Temp_Diff<CCD_Temp_Diff_Thresh)): #Conditions applicatble to all Image Types
+            #if((fname_key in Obs_Filename_Test) and (CCD_Temp_Diff<CCD_Temp_Diff_Thresh)): #Conditions applicatble to all Image Types
+            if(CCD_Temp_Diff<CCD_Temp_Diff_Thresh): #Conditions applicatble to all Image Types
                 if(Image_Type=="Bias Frame"): #Conditions for accepting a Bias
                     #print "BIAS TEST"
                     Bias_Fname_L.append(Obs_Filename_Test) #Conditions for accepting a Dark
                 if(Image_Type=="Dark Frame"):
                     Dark_Fname_L.append(Obs_Filename_Test)
                 if(Image_Type=="Flat Field"):
-                    Flat_Fname_L.append(Obs_Filename_Test)
-                if((Image_Type=="Light Frame") and (Obs_Filter==Filter)):
-                    Light_Fname_L.append(Obs_Filename_Test)
+                    Min,Max,Avg=Max_Min_Ave(Obs_Filename_Test,path)
+                    if((Avg>10000) and (Avg<30000)):
+                        Flat_Fname_L.append(Obs_Filename_Test)
+                if(fname_key==False):
+                    if((Image_Type=="Light Frame") and (Obs_Filter==Filter)):
+                        Light_Fname_L.append(Obs_Filename_Test)
+                else:
+                    if((Image_Type=="Light Frame") and (Obs_Filter==Filter) and (fname_key in Obs_Filename_Test)):
+                        Light_Fname_L.append(Obs_Filename_Test)
         if(Camera_Type=="SBIG CCD"):
             Exposure_Time=hdul[0].header['EXPTIME']
             #print "Exposure_Time : ", Exposure_Time
@@ -196,6 +203,7 @@ def Image_Reduction(path,fname_key,Filter,Size=False,Date_Observation=False,CCD_
             #if((fname_key in Obs_Filename_Test or ("R" in Obs_Filename_Test)) and (CCD_Temp_Diff<CCD_Temp_Diff_Thresh) and (Size==X_Axis_Size)): #Conditions applicatble to all Image Types
             #if((fname_key in Obs_Filename_Test) and (CCD_Temp_Diff<CCD_Temp_Diff_Thresh) and (Size==X_Axis_Size)): #Conditions applicatble to all Image Types
             #if((fname_key in Obs_Filename_Test) and (Size==X_Axis_Size)): #Conditions applicatble to all Image Types
+            """
             if((fname_key in Obs_Filename_Test)): #Conditions applicatble to all Image Types
                 if(Image_Type=="Bias"): #Conditions for accepting a Bias
                     #print "BIAS TEST"
@@ -205,6 +213,22 @@ def Image_Reduction(path,fname_key,Filter,Size=False,Date_Observation=False,CCD_
                 if(Image_Type=="Flat"):
                     Flat_Fname_L.append(Obs_Filename_Test)
                 if((Image_Type=="Light") and (Obs_Filter==Filter)):
+                    Light_Fname_L.append(Obs_Filename_Test)
+            """
+            if(Image_Type=="Bias"): #Conditions for accepting a Bias
+                #print "BIAS TEST"
+                Bias_Fname_L.append(Obs_Filename_Test) #Conditions for accepting a Dark
+            if(Image_Type=="Dark"):
+                Dark_Fname_L.append(Obs_Filename_Test)
+            if(Image_Type=="Flat"):
+                Min,Max,Avg=Max_Min_Ave(Obs_Filename_Test,path)
+                if((Avg>10000) and (Avg<30000)):
+                    Flat_Fname_L.append(Obs_Filename_Test)
+            if(fname_key==False):
+                if((Image_Type=="Light") and (Obs_Filter==Filter)):
+                    Light_Fname_L.append(Obs_Filename_Test)
+            else:
+                if((Image_Type=="Light") and (Obs_Filter==Filter) and (fname_key in Obs_Filename_Test)):
                     Light_Fname_L.append(Obs_Filename_Test)
     print "Bias_Fname_L : ", Bias_Fname_L
     Bias_Avg=Average_Image(Bias_Fname_L,path,X_Size,Y_Size)
@@ -260,7 +284,7 @@ def Image_Reduction(path,fname_key,Filter,Size=False,Date_Observation=False,CCD_
             #imagefile1=fits.open(path+fname1)
             Dark_Data=Dark_hdul[0].data
             #print "Dark_Data : ", Dark_Data
-            Exposure_Time_Ratio=(float(Light_Exposure_Time)/float(Dark_Exposure_Time))
+            Exposure_Time_Ratio=(float(Light_Exposure_Time)/float(Dark_Exposure_Time)) #The assumption of linear extropaltion of the Dark frames is not good enough by a long shot. Only Darks the same exposure time as the Lights should be used. The code should be modifed so that the only darks with the same exposure time as the current light are used to correct the current light
             #print "Exposure_Time_Ratio : ", Exposure_Time_Ratio
             Adjusted_Dark_Data=Exposure_Time_Ratio*Dark_Data
             #print "Adjusted_Dark_Data : ", Adjusted_Dark_Data
@@ -302,3 +326,13 @@ def Image_Reduction(path,fname_key,Filter,Size=False,Date_Observation=False,CCD_
 #Image_Reduction("/Network/Servers/vimes.astro.wesleyan.edu/Volumes/vvodata/home/asantini/Desktop/24_Inch_Observations/Fireworks_Galaxy/Fireworks_Galaxy_101818/Finding_Fireworks_GDrive/Fireworks_V_101818_Reduced_2/All_Reduced_Test/","Fireworks","V")
 #Image_Reduction("/Network/Servers/vimes.astro.wesleyan.edu/Volumes/vvodata/home/asantini/Desktop/24_Inch_Observations/Fireworks_Galaxy/Fireworks_Galaxy_72018/72018_Modifed_Image_Reduction_Code_V3_Test/","Fireworks","V")
 #Image_Reduction("/Network/Servers/vimes.astro.wesleyan.edu/Volumes/vvodata/home/asantini/Desktop/24_Inch_Observations/Fireworks_Galaxy/Fireworks_Galaxy_101818/Finding_Fireworks_GDrive/Fireworks_V_101818_Reduced_2/All_Reduced_Test/","Fireworks","V")
+#Image_Reduction("/Network/Servers/vimes.astro.wesleyan.edu/Volumes/vvodata/home/asantini/Desktop/24_Inch_Observations/Fireworks_Galaxy/Fireworks_Galaxy_101818/Finding_Fireworks_GDrive/Fireworks_V_101818_Reduced_2/All_Reduced_Test_2/","Fireworks","V")
+#Image_Reduction("/Network/Servers/vimes.astro.wesleyan.edu/Volumes/vvodata/home/asantini/Desktop/24_Inch_Observations/Fireworks_Galaxy/Fireworks_Galaxy_102418/Fireworks_V_102418_Reduction/All_Reduced/","Fireworks","V")
+#Image_Reduction("/Network/Servers/vimes.astro.wesleyan.edu/Volumes/vvodata/home/asantini/Desktop/24_Inch_Observations/Fireworks_Galaxy/Fireworks_Galaxy_102418/Fireworks_V_102418_Reduction/All_Reduced/","Pleiades","V")
+#Andromeda_Light
+#Image_Reduction("/Network/Servers/vimes.astro.wesleyan.edu/Volumes/vvodata/home/asantini/Desktop/24_Inch_Observations/Fireworks_Galaxy/Fireworks_Galaxy_102418/Fireworks_V_102418_Reduction/All_Reduced/","Andromeda_Light","V")
+#Image_Reduction("/Network/Servers/vimes.astro.wesleyan.edu/Volumes/vvodata/home/asantini/Desktop/24_Inch_Observations/Fireworks_Galaxy/Fireworks_Galaxy_102918/FF_300s_Test/","Fireworks","V")
+#Image_Reduction("/Network/Servers/vimes.astro.wesleyan.edu/Volumes/vvodata/home/asantini/Desktop/24_Inch_Observations/Fireworks_Galaxy/Fireworks_Galaxy_102918/Fireworks_Test_120s/","Fireworks","V")
+#Image_Reduction("/Network/Servers/vimes.astro.wesleyan.edu/Volumes/vvodata/home/asantini/Desktop/24_Inch_Observations/Fireworks_Galaxy/Fireworks_Galaxy_102918/Fireworks_120s/","Fireworks","V")
+#Image_Reduction("/Network/Servers/vimes.astro.wesleyan.edu/Volumes/vvodata/home/asantini/Desktop/24_Inch_Observations/Fireworks_Galaxy/Fireworks_V_103018/All_600s_Reduced/","Fireworks","V")
+Image_Reduction("/Network/Servers/vimes.astro.wesleyan.edu/Volumes/vvodata/home/asantini/Desktop/24_Inch_Observations/Fireworks_Galaxy/Fireworks_Galaxy_103018/All_Reduced/","Fireworks","V")
