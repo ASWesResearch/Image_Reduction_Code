@@ -88,7 +88,7 @@ def Image_Reduction(path,fname_key,Filter,Size=False,Date_Observation=False,CCD_
         Obs_Filename_Test_L=Obs_Filename_Test.split(" ")
         #print "Obs_Filename_Test_L : ",Obs_Filename_Test_L
         for Obs_Filename_Segment in Obs_Filename_Test_L:
-            if((".fit" in Obs_Filename_Segment) or  (".fits" in Obs_Filename_Segment)):
+            if((".fit" in Obs_Filename_Segment) or  (".fits" in Obs_Filename_Segment) or (".fts" in Obs_Filename_Segment)):
                 Obs_Filename_Test_Corrected=Obs_Filename_Segment
         #print "Obs_Filename_Test_Corrected : ", Obs_Filename_Test_Corrected
         hdul = fits.open(path + Obs_Filename_Test)
@@ -230,6 +230,73 @@ def Image_Reduction(path,fname_key,Filter,Size=False,Date_Observation=False,CCD_
             else:
                 if((Image_Type=="Light") and (Obs_Filter==Filter) and (fname_key in Obs_Filename_Test)):
                     Light_Fname_L.append(Obs_Filename_Test)
+        if(Camera_Type=="FLI"):
+            #print hdul[0].header
+            Exposure_Time=hdul[0].header['EXPTIME']
+            #print "Exposure_Time : ", Exposure_Time
+            #Set_Temp=hdul[0].header['SET-TEMP'] #Does not work for 16" camera (SBIG CCD)
+            #print "Set_Temp : ", Set_Temp
+            ##CCD_Temp=hdul[0].header['CCD-TEMP'] #This is not working and I don't know why
+            #print "CCD_Temp : ", CCD_Temp
+            #X_Binning=hdul[0].header['XBINNING']
+            #print "X_Binning : ", X_Binning
+            #Y_Binning=hdul[0].header['YBINNING']
+            #print "Y_Binning : ", Y_Binning
+            Image_Type=hdul[0].header['IMAGETYP']
+            #Image_Type=hdul[0].header['FRAME']
+            print "Image_Type : ", Image_Type
+            #X_Axis_Size=hdul[0].header['NAXIS1'] #Not sure of NAXIS1 is the X-axis #Does not work for 16" camera (SBIG CCD)
+            X_Axis_Size=2048
+            print "X_Axis_Size : ",  X_Axis_Size
+            #Y_Axis_Size=hdul[0].header['NAXIS2'] #Not sure of NAXIS2 is the Y-axis #Does not work for 16" camera (SBIG CCD)
+            Y_Axis_Size=2048
+            print "Y_Axis_Size : ",  Y_Axis_Size
+            #CCD_Temp_Diff=CCD_Temp-Set_Temp #Does not work for 16" camera (SBIG CCD)
+            #print "CCD_Temp_Diff : ", CCD_Temp_Diff
+            #if((Image_Type=="Light Frame") or (Image_Type=="Flat Field")):
+            if((Image_Type=="Light Frame") or (Image_Type=="Flat Field")):
+                Obs_Filter=hdul[0].header['FILTER']
+                print "Obs_Filter : ", Obs_Filter
+            """
+            if(Size==False and (X_Axis_Size==Y_Axis_Size)):
+                Size=X_Axis_Size
+            if(X_Axis_Size!=Y_Axis_Size):
+                print "Not a square CCD ! ! !"
+                return False
+            """
+            X_Size=X_Axis_Size
+            Y_Size=Y_Axis_Size
+            #if((fname_key in Obs_Filename_Test or ("R" in Obs_Filename_Test)) and (int(X_Binning)==Bin) and (int(X_Binning)==Bin) and (CCD_Temp_Diff<CCD_Temp_Diff_Thresh)): #Conditions applicatble to all Image Types
+            #if((fname_key in Obs_Filename_Test or ("R" in Obs_Filename_Test)) and (CCD_Temp_Diff<CCD_Temp_Diff_Thresh) and (Size==X_Axis_Size)): #Conditions applicatble to all Image Types
+            #if((fname_key in Obs_Filename_Test) and (CCD_Temp_Diff<CCD_Temp_Diff_Thresh) and (Size==X_Axis_Size)): #Conditions applicatble to all Image Types
+            #if((fname_key in Obs_Filename_Test) and (Size==X_Axis_Size)): #Conditions applicatble to all Image Types
+            """
+            if((fname_key in Obs_Filename_Test)): #Conditions applicatble to all Image Types
+                if(Image_Type=="Bias"): #Conditions for accepting a Bias
+                    #print "BIAS TEST"
+                    Bias_Fname_L.append(Obs_Filename_Test) #Conditions for accepting a Dark
+                if(Image_Type=="Dark"):
+                    Dark_Fname_L.append(Obs_Filename_Test)
+                if(Image_Type=="Flat"):
+                    Flat_Fname_L.append(Obs_Filename_Test)
+                if((Image_Type=="Light") and (Obs_Filter==Filter)):
+                    Light_Fname_L.append(Obs_Filename_Test)
+            """
+            if(Image_Type=="Bias Frame"): #Conditions for accepting a Bias
+                #print "BIAS TEST"
+                Bias_Fname_L.append(Obs_Filename_Test) #Conditions for accepting a Dark
+            if(Image_Type=="Dark Frame"):
+                Dark_Fname_L.append(Obs_Filename_Test)
+            if(Image_Type=="Flat Field"):
+                Min,Max,Avg=Max_Min_Ave(Obs_Filename_Test,path)
+                if((Avg>10000) and (Avg<30000)):
+                    Flat_Fname_L.append(Obs_Filename_Test)
+            if(fname_key==False):
+                if((Image_Type=="Light Frame") and (Obs_Filter==Filter)):
+                    Light_Fname_L.append(Obs_Filename_Test)
+            else:
+                if((Image_Type=="Light Frame") and (Obs_Filter==Filter) and (fname_key in Obs_Filename_Test)):
+                    Light_Fname_L.append(Obs_Filename_Test)
     print "Bias_Fname_L : ", Bias_Fname_L
     Bias_Avg=Average_Image(Bias_Fname_L,path,X_Size,Y_Size)
     Bias_Avg_fname=fname_key+"_Avg_Bias.fit"
@@ -280,7 +347,8 @@ def Image_Reduction(path,fname_key,Filter,Size=False,Date_Observation=False,CCD_
         for Dark_Fname in Dark_Fname_L:
             Dark_hdul=fits.open(path + Dark_Fname)
             Dark_Exposure_Time=Dark_hdul[0].header['EXPTIME']
-            #print "Dark_Exposure_Time : ", Dark_Exposure_Time
+            print "Dark_Fname: ", Dark_Fname
+            print "Dark_Exposure_Time : ", Dark_Exposure_Time
             #imagefile1=fits.open(path+fname1)
             Dark_Data=Dark_hdul[0].data
             #print "Dark_Data : ", Dark_Data
